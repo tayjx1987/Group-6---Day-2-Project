@@ -1,0 +1,6 @@
+{
+  "name": "MANNAG Stock Decision & Chart Dashboard",
+  "description": "Real-time stock tracker, decision panel, and technical indicator charts for MANNAG stocks (META, AMZN, AAPL, NFLX, GOOGL) powered via Model Context Protocol (MCP).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
