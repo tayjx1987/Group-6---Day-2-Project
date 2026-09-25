@@ -33,7 +33,7 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({
                 <span>Model Context Protocol (MCP) Diagnostics</span>
               </h3>
               <p className="text-xs text-slate-400">
-                JSON-RPC 2.0 & SSE Connection Inspector
+                Streamable HTTP Server & Tools Inspector (/api/mcp)
               </p>
             </div>
           </div>
@@ -49,7 +49,7 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({
         {/* Status Highlights */}
         <div className="grid grid-cols-2 gap-3 my-4">
           <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
-            <div className="text-xs text-slate-400">Live SSE Stream (/api/mcp)</div>
+            <div className="text-xs text-slate-400">Streamable HTTP MCP Server</div>
             <div className="flex items-center gap-2 mt-1">
               <span
                 className={`w-2.5 h-2.5 rounded-full ${
@@ -61,12 +61,12 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({
                   sseConnected ? 'text-emerald-400' : 'text-amber-400'
                 }`}
               >
-                {sseConnected ? 'Healthy & Connected' : 'Connecting...'}
+                {sseConnected ? 'Healthy & Operational' : 'Connecting...'}
               </span>
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5 flex items-center justify-between">
-              <span>Heartbeat Pings:</span>
-              <span className="font-mono text-slate-200 font-semibold">{ssePingCount}</span>
+              <span>Endpoint:</span>
+              <span className="font-mono text-slate-200 font-semibold">/api/mcp</span>
             </div>
           </div>
 
@@ -133,7 +133,11 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({
             <span>Registered MCP JSON-RPC Tools</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {(health?.toolsAvailable || ['get_stock_price', 'get_historical_prices', 'get_technical_indicators']).map((tool) => (
+            {(health?.toolsAvailable || [
+              'group6_get_stock_prices',
+              'group6_get_historical_prices',
+              'group6_get_technical_indicators',
+            ]).map((tool) => (
               <div
                 key={tool}
                 className="p-2 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs text-slate-200 font-mono text-center truncate"

@@ -1,13 +1,11 @@
 /**
  * Standalone API handler for MANNAG stock tracker and decision engine.
  * Accepts 'ticker' query parameter (META, AMZN, AAPL, NFLX, GOOGL).
- * Executes MCP tools via JSON-RPC.
  */
 
-import { VALID_TICKERS, fetchStockViaMcp } from './mcp-engine.js';
+import { VALID_TICKERS, getStockPriceData } from '../lib/market-service.js';
 
 export default async function handler(req, res) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -20,11 +18,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Extract and normalize ticker (default to AAPL)
   const rawTicker = req.query?.ticker;
   const ticker = (rawTicker ? String(rawTicker).trim() : 'AAPL').toUpperCase();
 
-  // Strict validation for MANNAG stocks
   if (!VALID_TICKERS.includes(ticker)) {
     return res.status(400).json({
       error: 'Only MANNAG stocks (META, AMZN, AAPL, NFLX, GOOGL) are supported.',
@@ -32,9 +28,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = await fetchStockViaMcp(ticker);
+    const data = await getStockPriceData(ticker);
 
-    // Safeguard against NaN or null
     const safePrice = Number.isFinite(data.price) ? Number(data.price.toFixed(2)) : 100.00;
     const safeChange = Number.isFinite(data.changePercent) ? Number(data.changePercent.toFixed(2)) : 0.00;
     const safeDecision = ['BUY', 'SELL', 'HOLD'].includes(data.decision) ? data.decision : 'HOLD';
@@ -60,14 +55,14 @@ export default async function handler(req, res) {
       reasoning: safeReasoning,
       chartData: safeChartData,
       meta: {
-        mcpStatus: process.env.MCP_SERVER_URL ? 'remote_mcp' : 'local_mcp_engine',
-        generatedAt: new Date().toISOString(),
-      }
+        source: data.source || 'Upstream Market Feed Service',
+        generatedAt: data.fetched_at || new Date().toISOString(),
+      },
     });
   } catch (error) {
     console.error(`[api/stock] Error fetching ticker ${ticker}:`, error);
     return res.status(500).json({
-      error: 'Internal server error executing MCP tool call.',
+      error: 'Internal server error executing stock price lookup.',
     });
   }
 }

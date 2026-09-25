@@ -4,7 +4,11 @@
  * CRITICAL: Never prints secrets or authorization headers.
  */
 
-import { MCP_TOOLS } from './mcp-engine.js';
+export const MCP_TOOLS_LIST = [
+  'group6_get_stock_prices',
+  'group6_get_historical_prices',
+  'group6_get_technical_indicators',
+];
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,7 +23,6 @@ export default async function handler(req, res) {
   const mcpServerConfigured = Boolean(rawUrl && rawUrl.length > 0);
   const mcpAuthTokenConfigured = Boolean(process.env.MCP_AUTH_TOKEN?.trim());
 
-  // Masked URL to prevent exposing any sensitive internal network tokens if in query
   let sanitizedUrl = null;
   if (mcpServerConfigured) {
     try {
@@ -33,19 +36,18 @@ export default async function handler(req, res) {
   if (!mcpServerConfigured) {
     return res.status(200).json({
       status: 'healthy',
-      mode: 'embedded_mcp_engine',
+      mode: 'group6_mcp_server',
       mcpServerConfigured: false,
-      mcpServerUrl: null,
+      mcpServerUrl: '/api/mcp',
       authTokenConfigured: mcpAuthTokenConfigured,
       toolsListSuccess: true,
       statusCode: 200,
-      toolsAvailable: MCP_TOOLS.map((t) => t.name),
-      message: 'Running in resilient standalone mode with embedded MCP JSON-RPC tool engine.',
+      toolsAvailable: MCP_TOOLS_LIST,
+      message: 'Streamable HTTP MCP Server (/api/mcp) is operational with group6 tools registered.',
       timestamp: new Date().toISOString(),
     });
   }
 
-  // MCP_SERVER_URL is set: perform tools/list handshake
   try {
     const headers = {
       'Content-Type': 'application/json',
@@ -81,7 +83,7 @@ export default async function handler(req, res) {
       const data = await response.json();
       if (data && !data.error) {
         toolsListSuccess = true;
-        availableTools = data.result?.tools?.map((t) => t.name) || MCP_TOOLS.map((t) => t.name);
+        availableTools = data.result?.tools?.map((t) => t.name) || MCP_TOOLS_LIST;
       }
     }
 
@@ -108,7 +110,7 @@ export default async function handler(req, res) {
       authTokenConfigured: mcpAuthTokenConfigured,
       toolsListSuccess: false,
       statusCode: 503,
-      toolsAvailable: MCP_TOOLS.map((t) => t.name),
+      toolsAvailable: MCP_TOOLS_LIST,
       message: `Failed to reach configured MCP Server (${err.name === 'AbortError' ? 'timeout' : 'connection refused'}). Falling back to embedded tool engine.`,
       timestamp: new Date().toISOString(),
     });

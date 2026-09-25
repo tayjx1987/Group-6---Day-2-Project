@@ -91,62 +91,36 @@ export default function App() {
     }
   }, []);
 
-  // Connect to SSE stream at /api/mcp with automatic retry and ping monitoring
+  // Monitor MCP Server connection and health
   useEffect(() => {
-    let es: EventSource | null = null;
-    let retryTimeout: any = null;
+    let checkInterval: any = null;
     let isSubscribed = true;
 
-    const connectSSE = () => {
+    const checkMcpStatus = async () => {
       if (!isSubscribed) return;
       try {
-        es = new EventSource('/api/mcp');
-        eventSourceRef.current = es;
-
-        es.onopen = () => {
-          if (!isSubscribed) return;
-          setSseConnected(true);
-        };
-
-        es.onmessage = (evt) => {
-          if (!isSubscribed) return;
-          setSseConnected(true);
-        };
-
-        es.addEventListener('endpoint', () => {
-          if (!isSubscribed) return;
-          setSseConnected(true);
-        });
-
-        es.addEventListener('ping', () => {
-          if (!isSubscribed) return;
-          setSseConnected(true);
-          setSsePingCount((prev) => prev + 1);
-        });
-
-        es.onerror = (e) => {
-          if (!isSubscribed) return;
-          // EventSource automatically retries, but if readyState is CLOSED, schedule a reconnect
-          if (es?.readyState === EventSource.CLOSED) {
-            setSseConnected(false);
-            es.close();
-            retryTimeout = setTimeout(connectSSE, 2000);
+        const res = await fetch('/api/health');
+        if (res.ok) {
+          const data = await res.json();
+          if (isSubscribed) {
+            setHealthInfo(data);
+            setSseConnected(data.status === 'healthy' || data.status === 'connected');
+            setSsePingCount((prev) => prev + 1);
           }
-        };
+        }
       } catch (e) {
-        console.warn('SSE initialization error:', e);
         if (isSubscribed) {
-          retryTimeout = setTimeout(connectSSE, 3000);
+          setSseConnected(false);
         }
       }
     };
 
-    connectSSE();
+    checkMcpStatus();
+    checkInterval = setInterval(checkMcpStatus, 10000);
 
     return () => {
       isSubscribed = false;
-      if (retryTimeout) clearTimeout(retryTimeout);
-      if (es) es.close();
+      if (checkInterval) clearInterval(checkInterval);
     };
   }, []);
 
