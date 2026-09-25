@@ -16,11 +16,14 @@ import {
 } from '../lib/market-service.js';
 
 export default async function handler(req, res) {
-  // Method guard removed — request passes directly to your handler logic
-
-  // --- Place your MCP handler logic here ---
-  // e.g., await mcpServer.handleRequest(req, res);
-}
+  // Allow GET requests for simple health checks in the browser
+  if (req.method === 'GET') {
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json({
+      status: 'ok',
+      message: 'MCP Server endpoint is active. Use POST to communicate via JSON-RPC.'
+    });
+  }
 
   // 1. Create fresh McpServer instance on every request (keeps no sessions)
   const server = new McpServer({
