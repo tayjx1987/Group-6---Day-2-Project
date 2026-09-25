@@ -104,14 +104,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Inspect Model Context Protocol connection"
             >
               <Server className="w-3.5 h-3.5 text-blue-400" />
-              <span>MCP Status:</span>
-              <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+              <span>MCP:</span>
+              <span
+                className={`flex items-center gap-1 font-semibold ${
+                  sseConnected ? 'text-emerald-400' : 'text-amber-400'
+                }`}
+              >
                 <span
                   className={`w-2 h-2 rounded-full ${
                     sseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
                   }`}
                 />
-                {sseConnected ? 'SSE Active' : 'Connecting'}
+                {sseConnected ? 'Healthy' : 'Connecting'}
               </span>
             </button>
 

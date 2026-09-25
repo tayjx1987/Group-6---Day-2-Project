@@ -53,15 +53,20 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({
             <div className="flex items-center gap-2 mt-1">
               <span
                 className={`w-2.5 h-2.5 rounded-full ${
-                  sseConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                  sseConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-ping'
                 }`}
               />
-              <span className="font-semibold text-sm text-slate-200">
-                {sseConnected ? 'Stream Active' : 'Connecting...'}
+              <span
+                className={`font-semibold text-sm ${
+                  sseConnected ? 'text-emerald-400' : 'text-amber-400'
+                }`}
+              >
+                {sseConnected ? 'Healthy & Connected' : 'Connecting...'}
               </span>
             </div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
-              Pings received: {ssePingCount}
+            <div className="text-[11px] text-slate-400 mt-0.5 flex items-center justify-between">
+              <span>Heartbeat Pings:</span>
+              <span className="font-mono text-slate-200 font-semibold">{ssePingCount}</span>
             </div>
           </div>
 

@@ -91,35 +91,63 @@ export default function App() {
     }
   }, []);
 
-  // Connect to SSE stream at /api/mcp
+  // Connect to SSE stream at /api/mcp with automatic retry and ping monitoring
   useEffect(() => {
-    try {
-      const es = new EventSource('/api/mcp');
-      eventSourceRef.current = es;
+    let es: EventSource | null = null;
+    let retryTimeout: any = null;
+    let isSubscribed = true;
 
-      es.onopen = () => {
-        setSseConnected(true);
-      };
+    const connectSSE = () => {
+      if (!isSubscribed) return;
+      try {
+        es = new EventSource('/api/mcp');
+        eventSourceRef.current = es;
 
-      es.addEventListener('endpoint', (evt) => {
-        setSseConnected(true);
-      });
+        es.onopen = () => {
+          if (!isSubscribed) return;
+          setSseConnected(true);
+        };
 
-      es.addEventListener('ping', () => {
-        setSseConnected(true);
-        setSsePingCount((prev) => prev + 1);
-      });
+        es.onmessage = (evt) => {
+          if (!isSubscribed) return;
+          setSseConnected(true);
+        };
 
-      es.onerror = () => {
-        setSseConnected(false);
-      };
+        es.addEventListener('endpoint', () => {
+          if (!isSubscribed) return;
+          setSseConnected(true);
+        });
 
-      return () => {
-        es.close();
-      };
-    } catch (e) {
-      console.warn('SSE not supported or connection error:', e);
-    }
+        es.addEventListener('ping', () => {
+          if (!isSubscribed) return;
+          setSseConnected(true);
+          setSsePingCount((prev) => prev + 1);
+        });
+
+        es.onerror = (e) => {
+          if (!isSubscribed) return;
+          // EventSource automatically retries, but if readyState is CLOSED, schedule a reconnect
+          if (es?.readyState === EventSource.CLOSED) {
+            setSseConnected(false);
+            es.close();
+            retryTimeout = setTimeout(connectSSE, 2000);
+          }
+        };
+      } catch (e) {
+        console.warn('SSE initialization error:', e);
+        if (isSubscribed) {
+          retryTimeout = setTimeout(connectSSE, 3000);
+        }
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      isSubscribed = false;
+      if (retryTimeout) clearTimeout(retryTimeout);
+      if (es) es.close();
+    };
   }, []);
 
   // Initial load

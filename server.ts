@@ -27,20 +27,25 @@ async function startServer() {
 
   // MCP SSE Stream & connection endpoint at /api/mcp
   app.get('/api/mcp', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    if (typeof (res as any).flushHeaders === 'function') {
-      (res as any).flushHeaders();
-    }
+    res.flushHeaders?.();
 
-    // Announce MCP session initiation
+    // Announce MCP session initiation and send initial ping immediately
     res.write(`event: endpoint\ndata: ${JSON.stringify({ uri: '/api/mcp', protocol: 'mcp-2024-11-05', ready: true })}\n\n`);
+    res.write(`event: ping\ndata: ${JSON.stringify({ timestamp: new Date().toISOString(), initial: true })}\n\n`);
 
+    // High frequency heartbeat every 5 seconds to prevent cloud proxies / buffers from freezing the stream
     const interval = setInterval(() => {
-      res.write(`event: ping\ndata: ${JSON.stringify({ timestamp: new Date().toISOString() })}\n\n`);
-    }, 15000);
+      try {
+        res.write(`event: ping\ndata: ${JSON.stringify({ timestamp: new Date().toISOString() })}\n\n`);
+      } catch (err) {
+        clearInterval(interval);
+      }
+    }, 5000);
 
     req.on('close', () => {
       clearInterval(interval);
