@@ -16,18 +16,11 @@ import {
 } from '../lib/market-service.js';
 
 export default async function handler(req, res) {
-  // Only POST is allowed for the MCP Streamable HTTP transport
-  if (req.method !== 'POST') {
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(405).json({
-      jsonrpc: '2.0',
-      error: {
-        code: -32000,
-        message: 'Method not allowed',
-      },
-      id: null,
-    });
-  }
+  // Method guard removed — request passes directly to your handler logic
+
+  // --- Place your MCP handler logic here ---
+  // e.g., await mcpServer.handleRequest(req, res);
+}
 
   // 1. Create fresh McpServer instance on every request (keeps no sessions)
   const server = new McpServer({
